@@ -14,6 +14,8 @@ public class Board extends JPanel{
     private final int N_BLOCKS = 15;        // liczba bloków w jednym rzędzie / kolumnie
     private final int SCREEN_SIZE = N_BLOCKS * BLOCK_SIZE;  //rozmiar całej planszy
 
+    private volatile boolean running = true;
+
     // instancje
     private Pacman pacman;
     private Blinky blinky;
@@ -29,7 +31,7 @@ public class Board extends JPanel{
 
         // Tworzymy instancje Pac_mana i duchów z początkowymi instancjami
         pacman = new Pacman(7 * BLOCK_SIZE, 11 * BLOCK_SIZE);
-        blinky = new Blinky(7 * BLOCK_SIZE, 5 * BLOCK_SIZE);
+        blinky = new Blinky(7 * BLOCK_SIZE, 5 * BLOCK_SIZE, pacman);
         pinky = new Pinky(1*BLOCK_SIZE, 1 * BLOCK_SIZE);
         inky = new Inky(13*BLOCK_SIZE, 1 * BLOCK_SIZE);
         clyde = new Clyde(1*BLOCK_SIZE, 13 * BLOCK_SIZE);
@@ -38,6 +40,10 @@ public class Board extends JPanel{
         // odbieranie zdarzeń z klawiatury
         addKeyListener(new TAdapter());
         setFocusable(true);
+    }
+
+    public void stopGame(){
+        running = false;
     }
 
     //metoda rysująca zawartość planszy

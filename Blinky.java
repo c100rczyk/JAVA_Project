@@ -7,7 +7,7 @@ public class Blinky extends Ghost {
 
     private Pacman pacman;  //referencja do pacmana
 
-    public Blinky(int startX, int startY){
+    public Blinky(int startX, int startY , Pacman pacman){
         super(startX, startY, Color.red);       // początkowa pozycja i kolor
         this.pacman = pacman;   // przypisanie referencji do pacmana
     }
@@ -22,6 +22,7 @@ public class Blinky extends Ghost {
     private void chasePacman(){
         int pacmanX = pacman.getX();
         int pacmanY = pacman.getY();
+        this.moveDelay = 2;
 
         if (x < pacmanX){
             dx = 1;

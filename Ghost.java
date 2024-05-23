@@ -7,6 +7,8 @@ public abstract class Ghost {
     protected Color color;
     protected int dx, dy; //kierunek ruchu ducha
     private Random random = new Random();
+    protected int moveDelay = 1; // Domyślna wartość opóźnienia ruchu
+    private int moveCounter = 0; // Licznik do kontrolowania ruchu
 
     // Konstruktor klasy Ghost
     public Ghost(int startX, int startY, Color color){
@@ -24,6 +26,8 @@ public abstract class Ghost {
         g.setColor(color);
         g.fillRect(x,y,24,24); // prostokąt
     }
+
+
 
     protected void randomMove(){
         int direction = random.nextInt(4);
@@ -48,9 +52,16 @@ public abstract class Ghost {
         }
     }
 
+
     protected void updatePosition(){
-        x += dx * 24;
-        y += dy * 24;
+        moveCounter++;
+        if(moveCounter >= moveDelay){
+            x += dx*24;
+            y += dy*24;
+            moveCounter = 0;
+        }
+
     }
+
 }
 
