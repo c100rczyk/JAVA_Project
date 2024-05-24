@@ -9,12 +9,15 @@ import java.awt.event.KeyEvent;
 public class Board extends JPanel{
 
     private int pacmanDx, pacmanDy; // przechowywanie kierunku ruchu pacmana
+    private int score = 0;
 
     private final int BLOCK_SIZE = 24;      // rozmiar pojedynczego bloku na planszy
     private final int N_BLOCKS = 15;        // liczba bloków w jednym rzędzie / kolumnie
     private final int SCREEN_SIZE = N_BLOCKS * BLOCK_SIZE;  //rozmiar całej planszy
 
     private volatile boolean running = true;
+
+    private boolean[][] points;    //przechowywanie informacji o punktach na planszy.
 
     // instancje
     private Pacman pacman;
@@ -37,6 +40,14 @@ public class Board extends JPanel{
         clyde = new Clyde(1*BLOCK_SIZE, 13 * BLOCK_SIZE);
 
 
+        points = new boolean[N_BLOCKS][N_BLOCKS];
+        for(int i = 0 ; i < N_BLOCKS ; i++){
+            for(int j = 0 ; j < N_BLOCKS ; j++){
+                points[i][j] = true;
+            }
+        }
+
+
         // odbieranie zdarzeń z klawiatury
         addKeyListener(new TAdapter());
         setFocusable(true);
@@ -51,6 +62,7 @@ public class Board extends JPanel{
     protected void paintComponent(Graphics g){
         super.paintComponent(g);   // wywołanie metody nadrzędnej
         drawMaze(g);  // rysowanie labiryntu
+        drawPoints(g);
 
         pacman.draw(g); // rysowanie pacmana
         blinky.draw(g); // rysowanie duchów
@@ -58,7 +70,18 @@ public class Board extends JPanel{
         inky.draw(g);
         clyde.draw(g);
 
+        //rysowanie wyniku
+        g.setColor(Color.white);
+        g.drawString("Score: " + score, SCREEN_SIZE / 2, SCREEN_SIZE + 16);
+
+
+        if(!running){
+            g.setColor(Color.red);
+            g.drawString("GAME OVER", SCREEN_SIZE / 2 - 40, SCREEN_SIZE /2);
+        }
     }
+
+
 
     //metoda rysująca labirynt
     private void drawMaze(Graphics g){
@@ -69,6 +92,20 @@ public class Board extends JPanel{
             }
         }
     }
+
+    //Metoda rysująca punkty
+    private void drawPoints(Graphics g){
+        g.setColor(Color.white);
+        for(int i = 0 ; i < N_BLOCKS ; i++){
+            for(int j = 0 ; j < N_BLOCKS ; j++){
+                if(points[i][j]){
+                    g.fillOval(i * BLOCK_SIZE + BLOCK_SIZE / 3, j * BLOCK_SIZE + BLOCK_SIZE / 3, BLOCK_SIZE/3, BLOCK_SIZE/3);
+                }
+            }
+        }
+    }
+
+
 
     // obsługiwanie zdarzeń z klawiatury
     private class TAdapter extends KeyAdapter{
@@ -96,7 +133,42 @@ public class Board extends JPanel{
     //Aktualizacja pozycji Pacmana
     private void movePacman(){
         pacman.move(pacmanDx * BLOCK_SIZE, pacmanDy * BLOCK_SIZE);
+        collectPoint();
+        checkCollisions(); // sprawdzenie kolizji po ruchu pacmana
     }
+
+    // Metoda do zbierania punktów
+    private void collectPoint(){
+        int pacmanX = pacman.getX() / BLOCK_SIZE;
+        int pacmanY = pacman.getY() / BLOCK_SIZE;
+
+        if(pacmanX >=0 && pacmanX < N_BLOCKS && pacmanY >=0 && pacmanY < N_BLOCKS){
+            if(points[pacmanX][pacmanY]){
+            points[pacmanX][pacmanY] = false;
+            score ++;
+            }
+        }
+
+    }
+
+    //Metoda sprawdzająca kolizje
+    private void checkCollisions() {
+        int pacmanX = pacman.getX();
+        int pacmanY = pacman.getY();
+
+        if (collision(pacmanX, pacmanY, blinky) ||
+                collision(pacmanX, pacmanY, pinky) ||
+                collision(pacmanX, pacmanY, inky) ||
+                collision(pacmanX, pacmanY, clyde)) {
+            stopGame();
+            }
+    }
+
+
+    private boolean collision(int pacmanX, int pacmanY, Ghost ghost){
+        return pacmanX == ghost.x && pacmanY == ghost.y;
+    }
+
 
     //aktualizacja pozycji duchów
     private void moveGhosts(){
@@ -109,9 +181,12 @@ public class Board extends JPanel{
 
     //wywoływanie głównej pętli gry do aktualizacji stanu gry
     public void gameUpdate(){
-        movePacman();   // aktualizacja pozycji pacmanna
-        moveGhosts();   // aktualizacja pozycji duchów
-        repaint();      // przerysowanie planszy
+        if(running){
+            movePacman();   // aktualizacja pozycji pacmanna
+            moveGhosts();   // aktualizacja pozycji duchów
+            repaint();      // przerysowanie planszy
+        }
+
     }
 
 

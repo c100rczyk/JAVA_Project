@@ -45,7 +45,7 @@ public class Game {
                 while(true){
                     board.gameUpdate();
                     try{
-                        Thread.sleep(40);       // co 40 ms
+                        Thread.sleep(100);       // co 40 ms
                     }catch(InterruptedException e){
                         e.printStackTrace();
                     }
