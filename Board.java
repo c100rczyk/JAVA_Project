@@ -1,10 +1,14 @@
 import javax.swing.JPanel;
+import javax.swing.Timer;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.Color;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.*;
+import java.util.Random;
 
 
 public class Board extends JPanel{
@@ -20,6 +24,7 @@ public class Board extends JPanel{
     private volatile boolean running = true;
 
     private boolean[][] points;    //przechowywanie informacji o punktach na planszy.
+    private int[][] maze;
 
     // instancje
     private Pacman pacman;
@@ -27,35 +32,64 @@ public class Board extends JPanel{
     private Pinky pinky;
     private Inky inky;
     private Clyde clyde;
+    private Random random = new Random();
+
 
     // konstruktor klasy Board
-    public Board(){
-        setPreferredSize(new Dimension(SCREEN_SIZE, SCREEN_SIZE));  //ustawienie rozmiaru planszy
+    public Board() {
+        setPreferredSize(new Dimension(SCREEN_SIZE, SCREEN_SIZE+40));  //ustawienie rozmiaru planszy
         setBackground(Color.BLACK); //kolor tła czarny
         loadHighScore();
         initGame();
 
-
         // odbieranie zdarzeń z klawiatury
         addKeyListener(new TAdapter());
         setFocusable(true);
+
+        Timer timer = new Timer(10000, new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                regeneratePoints();
+            }
+        });
+        timer.start();
     }
 
     public void initGame(){
         // Tworzymy instancje Pac_mana i duchów z początkowymi instancjami
-        pacman = new Pacman(7 * BLOCK_SIZE, 11 * BLOCK_SIZE);
-        blinky = new Blinky(7 * BLOCK_SIZE, 5 * BLOCK_SIZE, pacman);
-        pinky = new Pinky(1*BLOCK_SIZE, 1 * BLOCK_SIZE);
-        inky = new Inky(13*BLOCK_SIZE, 1 * BLOCK_SIZE);
-        clyde = new Clyde(1*BLOCK_SIZE, 13 * BLOCK_SIZE);
+        pacman = new Pacman(8 * BLOCK_SIZE, 11 * BLOCK_SIZE, this);
+        blinky = new Blinky(8 * BLOCK_SIZE, 5 * BLOCK_SIZE, pacman, this);
+        pinky = new Pinky(1*BLOCK_SIZE, 1 * BLOCK_SIZE, pacman, this);
+        clyde = new Clyde(1*BLOCK_SIZE, 13 * BLOCK_SIZE, pacman,  this);
+        Ghost[] otherGhosts = {blinky, pinky, clyde};
+        inky = new Inky(13*BLOCK_SIZE, 1 * BLOCK_SIZE, pacman, this, otherGhosts);
 
 
-        points = new boolean[N_BLOCKS][N_BLOCKS];
-        for(int i = 0 ; i < N_BLOCKS ; i++){
-            for(int j = 0 ; j < N_BLOCKS ; j++){
+points = new boolean[N_BLOCKS][N_BLOCKS];
+        for (int i = 0; i < N_BLOCKS; i++) {
+            for (int j = 0; j < N_BLOCKS; j++) {
                 points[i][j] = true;
             }
         }
+
+        //inicjowanie ukladu labiryntu
+        maze = new int[][] {
+            {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+            {1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 0, 1},
+            {1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1},
+            {1, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1},
+            {1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 0, 0, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1},
+            {1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 1},
+            {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+            {1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1}
+        };
+
         score = 0;
         running = true;
     }
@@ -120,26 +154,35 @@ public class Board extends JPanel{
 
 
     //metoda rysująca labirynt
-    private void drawMaze(Graphics g){
+    private void drawMaze(Graphics g) {
         g.setColor(Color.blue);
-        for(int x = 0; x < SCREEN_SIZE; x+= BLOCK_SIZE){
-            for(int y = 0; y < SCREEN_SIZE; y+= BLOCK_SIZE){
-                g.drawRect(x,y,BLOCK_SIZE, BLOCK_SIZE);
-            }
-        }
-    }
-
-    //Metoda rysująca punkty
-    private void drawPoints(Graphics g){
-        g.setColor(Color.white);
-        for(int i = 0 ; i < N_BLOCKS ; i++){
-            for(int j = 0 ; j < N_BLOCKS ; j++){
-                if(points[i][j]){
-                    g.fillOval(i * BLOCK_SIZE + BLOCK_SIZE / 3, j * BLOCK_SIZE + BLOCK_SIZE / 3, BLOCK_SIZE/3, BLOCK_SIZE/3);
+        for (int i = 0; i < N_BLOCKS; i++) {
+            for (int j = 0; j < N_BLOCKS; j++) {
+                if (maze[i][j] == 1) {
+                    g.fillRect(i * BLOCK_SIZE, j * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
+                } else {
+                    g.drawRect(i * BLOCK_SIZE, j * BLOCK_SIZE, BLOCK_SIZE, BLOCK_SIZE);
                 }
             }
         }
     }
+
+    public int[][] getMaze() {
+        return maze;
+    }
+
+    //Metoda rysująca punkty
+    private void drawPoints(Graphics g) {
+        g.setColor(Color.white);
+        for (int i = 0; i < N_BLOCKS; i++) {
+            for (int j = 0; j < N_BLOCKS; j++) {
+                if (points[i][j] && maze[i][j] == 0) {
+                    g.fillOval(i * BLOCK_SIZE + BLOCK_SIZE / 3, j * BLOCK_SIZE + BLOCK_SIZE / 3, BLOCK_SIZE / 3, BLOCK_SIZE / 3);
+                }
+            }
+        }
+    }
+
 
 
 
@@ -153,15 +196,19 @@ public class Board extends JPanel{
             if(key == KeyEvent.VK_LEFT){
                 pacmanDx = -1;
                 pacmanDy = 0;
+                pacman.setDirection("left");
             } else if(key == KeyEvent.VK_RIGHT){
                 pacmanDx = 1;
                 pacmanDy = 0;
+                pacman.setDirection("right");
             } else if(key == KeyEvent.VK_UP){
                 pacmanDx = 0;
                 pacmanDy = -1;
+                pacman.setDirection("up");
             } else if(key == KeyEvent.VK_DOWN){
                 pacmanDx = 0;
                 pacmanDy = 1;
+                pacman.setDirection("down");
             } else if (key == KeyEvent.VK_R && !running){
                 resetGame();
             }
@@ -172,11 +219,20 @@ public class Board extends JPanel{
 
     // PACMAN __________________________________________________________________
     //Aktualizacja pozycji Pacmana
-    private void movePacman(){
-        pacman.move(pacmanDx * BLOCK_SIZE, pacmanDy * BLOCK_SIZE);
+    private void movePacman() {
+        int newX = pacman.getX() + pacmanDx * BLOCK_SIZE;
+        int newY = pacman.getY() + pacmanDy * BLOCK_SIZE;
+
+        if (newX >= 0 && newX < SCREEN_SIZE && newY >= 0 && newY < SCREEN_SIZE &&
+            maze[newX / BLOCK_SIZE][newY / BLOCK_SIZE] == 0) {
+            pacman.move(pacmanDx * BLOCK_SIZE, pacmanDy * BLOCK_SIZE, pacman.direction);
+        }
+
         collectPoint();
         checkCollisions(); // sprawdzenie kolizji po ruchu pacmana
     }
+
+
     // Metoda do zbierania punktów
     private void collectPoint(){
         int pacmanX = pacman.getX() / BLOCK_SIZE;
@@ -206,13 +262,15 @@ public class Board extends JPanel{
         return pacmanX == ghost.x && pacmanY == ghost.y;
     }
 
+    public int getSCREEN_SIZE(){
+        return SCREEN_SIZE;
+    }
     // GHOSTS ________________________________________________________________
     //aktualizacja pozycji duchów
     private void moveGhosts(){
         blinky.move();
         pinky.move();
         inky.move();
-        clyde.move();
     }
 
     // UPDATING AGAIN AND AGAIN________________________________________________
@@ -221,11 +279,30 @@ public class Board extends JPanel{
         if(running){
             movePacman();   // aktualizacja pozycji pacmanna
             moveGhosts();   // aktualizacja pozycji duchów
+            clyde.move();
             repaint();      // przerysowanie planszy
         }
     }
 
+    public int getBlockSize()
+    {
+        return BLOCK_SIZE;
+    }
 
+    // Metoda do regeneracji punktów
+    private void regeneratePoints() {
+        int pointsToRegenerate = 5;
+        for (int i = 0; i < pointsToRegenerate; i++) {
+            int x, y;
+            do {
+                x = random.nextInt(N_BLOCKS);
+                y = random.nextInt(N_BLOCKS);
+            } while (maze[x][y] != 0 || points[x][y]);
+
+            points[x][y] = true;
+        }
+        repaint();
+    }
 
 }
 

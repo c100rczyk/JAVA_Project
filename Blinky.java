@@ -1,15 +1,15 @@
 // dziedziczy po klasie Ghost
 
 import java.awt.Color;
-import java.awt.Graphics;
 
 public class Blinky extends Ghost {
 
     private Pacman pacman;  //referencja do pacmana
 
-    public Blinky(int startX, int startY , Pacman pacman){
-        super(startX, startY, Color.red);       // początkowa pozycja i kolor
+    public Blinky(int startX, int startY , Pacman pacman, Board board){
+        super(startX, startY, Color.red, board, "blinky.png");       // początkowa pozycja i kolor
         this.pacman = pacman;   // przypisanie referencji do pacmana
+        new Thread(this).start();
     }
 
 
